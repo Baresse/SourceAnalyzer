@@ -1,6 +1,7 @@
 package lba.util;
 
 import lba.util.dependency.DependencyAnalyzer;
+import lba.util.lines.LineCounterAnalyzer;
 import lba.util.service.RestletServiceAnalyzer;
 import org.apache.commons.cli.*;
 
@@ -45,6 +46,13 @@ public class Main {
                         .desc("Analyze Restlet services")
                         .build()
         );
+
+        group.addOption(
+                Option.builder("l")
+                        .longOpt("linesCounter")
+                        .desc("Count the number of lines of code")
+                        .build()
+        );
         options.addOptionGroup(group);
 
         options.addOption(
@@ -87,7 +95,7 @@ public class Main {
             if (line.hasOption("dependencies")) {
                 // Create the specialized visitor
                 JavaSourceFileVisitor<DependencyAnalyzer> javaSourceFileVisitor =
-                        new JavaSourceFileVisitor<DependencyAnalyzer>(new DependencyAnalyzer());
+                        new JavaSourceFileVisitor<>(new DependencyAnalyzer());
 
                 // Perform the walk file tree...
                 Files.walkFileTree(rootPath, javaSourceFileVisitor);
@@ -100,7 +108,7 @@ public class Main {
             if (line.hasOption("restletServices")) {
                 // Create the specialized visitor
                 JavaSourceFileVisitor<RestletServiceAnalyzer> javaSourceFileVisitor =
-                        new JavaSourceFileVisitor<RestletServiceAnalyzer>(new RestletServiceAnalyzer());
+                        new JavaSourceFileVisitor<>(new RestletServiceAnalyzer());
 
                 // Perform the walk file tree...
                 Files.walkFileTree(rootPath, javaSourceFileVisitor);
@@ -125,6 +133,21 @@ public class Main {
 
                 report += "\n Total number of entities :" + entityNumber + "\n";
                 report += "\n Total number of services :" + serviceNumber + "\n";
+
+                Files.write(Paths.get(line.getOptionValue("output")), report.getBytes());
+            }
+
+            if (line.hasOption("linesCounter")) {
+                // Create the specialized visitor
+                JavaSourceFileVisitor<LineCounterAnalyzer> javaSourceFileVisitor =
+                        new JavaSourceFileVisitor<>(new LineCounterAnalyzer());
+
+                // Perform the walk file tree...
+                Files.walkFileTree(rootPath, javaSourceFileVisitor);
+
+                // Print the total lines of code
+                String report = "Total lines of code :" + javaSourceFileVisitor.getAnalyser().getLinesNumber();
+                System.out.println(report);
 
                 Files.write(Paths.get(line.getOptionValue("output")), report.getBytes());
             }
